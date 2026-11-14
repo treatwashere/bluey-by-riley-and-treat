@@ -62,6 +62,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         server.onRequest = { [weak self] packet, reply in
             guard let self else { return }
+            // The phone can change his colour or the AI too; everyone else hears about it.
+            if packet.command == "colour" {
+                if let colour = BerryColour.named(packet.text) { Palette.current = colour }
+                return
+            }
+            if packet.command == "aiProvider" {
+                if let provider = AIProvider(rawValue: packet.text ?? "") { self.settings.aiProvider = provider }
+                self.server.broadcast(Packet(command: "aiProvider", text: self.settings.aiProvider.rawValue))
+                return
+            }
             if packet.command?.hasPrefix("focus") == true {
                 self.focus.heartbeat()
                 let args = packet.text.flatMap { try? JSONSerialization.jsonObject(with: Data($0.utf8)) as? [String: Any] } ?? [:]
@@ -81,6 +91,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 reply(Packet(command: "focusReply", callID: packet.callID, text: result))
             } else { self.host.handle(packet, reply: reply) }
         }
+        server.onAuthenticated = { [weak self] send in
+            guard let self else { return }
+            send(Packet(command: "colour", text: Palette.current.id))
+            send(Packet(command: "aiProvider", text: self.settings.aiProvider.rawValue))
+        }
+        NotificationCenter.default.addObserver(forName: Palette.didChange, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                self.statusItem.button?.image = MenuIcon.make()
+                self.server.broadcast(Packet(command: "colour", text: Palette.current.id))
+            }
+        }
         server.start()
         host.onChange = { [weak self] in self?.refreshIcon() }
         codex.onEvent = { [weak self] event in self?.codexEvent(event) }
@@ -97,8 +119,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         // ⌃⌥S stops him using the computer right away.
         HotKeys.shared.register(keyCode: kVK_ANSI_S) { [weak self] in self?.stopActions() }
 
-        if Keychain.get(.openai) == nil {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in self?.editKeys() }
+        if !FocusAPI.hasAnyKey {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in self?.editKey(FocusAPI.key(for: self?.settings.aiProvider ?? .chatgpt)) }
         }
     }
 
@@ -289,20 +311,42 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         restartIfAwake()
     }
 
-    @objc private func editKeys() {
+    @objc private func editKeyItem(_ item: NSMenuItem) {
+        if let raw = item.representedObject as? String, let key = Keychain.Key(rawValue: raw) { editKey(key) }
+    }
+
+    private func editKey(_ key: Keychain.Key) {
         NSApp.activate(ignoringOtherApps: true)
         let alert = NSAlert()
-        alert.messageText = "OpenAI API Key"
-        alert.informativeText = "Saved privately on this Mac (not in the project files). The phone only ever gets short-lived keys."
+        alert.messageText = "\(key.title) API Key"
+        alert.informativeText = key == .openai
+            ? "Saved privately on this Mac (not in the project files). Voice always uses ChatGPT; the phone only ever gets short-lived keys."
+            : "Saved privately on this Mac (not in the project files). It never goes to the phone."
         let field = NSSecureTextField(frame: NSRect(x: 0, y: 0, width: 360, height: 24))
-        field.placeholderString = Keychain.get(.openai) == nil ? "sk-…" : "Key saved. Paste a new one to replace it."
+        field.placeholderString = Keychain.get(key) == nil ? key.placeholder : "Key saved. Paste a new one to replace it."
         alert.accessoryView = field
         alert.addButton(withTitle: "Save")
         alert.addButton(withTitle: "Cancel")
+        if Keychain.get(key) != nil { alert.addButton(withTitle: "Remove Key") }
         alert.window.initialFirstResponder = field
-        guard alert.runModal() == .alertFirstButtonReturn else { return }
-        let key = field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !key.isEmpty { Keychain.set(.openai, key) }
+        switch alert.runModal() {
+        case .alertFirstButtonReturn:
+            let value = field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !value.isEmpty { Keychain.set(key, value) }
+        case .alertThirdButtonReturn: Keychain.set(key, nil)
+        default: break
+        }
+    }
+
+    @objc private func setColour(_ item: NSMenuItem) {
+        if let colour = BerryColour.named(item.representedObject as? String) { Palette.current = colour }
+    }
+
+    @objc private func setAIProvider(_ item: NSMenuItem) {
+        guard let provider = AIProvider(rawValue: item.representedObject as? String ?? "") else { return }
+        settings.aiProvider = provider
+        server.broadcast(Packet(command: "aiProvider", text: provider.rawValue))
+        if !FocusAPI.hasAnyKey { editKey(FocusAPI.key(for: provider)) }
     }
 
     @objc private func setMood(_ item: NSMenuItem) {
@@ -319,7 +363,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                                 action: nil, keyEquivalent: "")
         status.isEnabled = false
         menu.addItem(status)
-        menu.addItem(item("Pair iPhone (QR)…", #selector(pairPhone)))
+        menu.addItem(item("Pair Phone (iPhone or Android, QR)…", #selector(pairPhone)))
         if let session = focus.current, session.status != .ended {
             let title = NSMenuItem(title: "Focus: \(session.task) · \(FocusSession.clock(session.remaining))", action: nil, keyEquivalent: "")
             title.isEnabled = false; menu.addItem(title)
@@ -396,7 +440,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         menu.addItem(item("Open Meeting Notes", #selector(openNotes)))
         menu.addItem(item("Personality…", #selector(editPersonality)))
-        menu.addItem(item("OpenAI Key…", #selector(editKeys)))
+        menu.addItem(.separator())
+
+        // Settings: his colour and which AI watches your focus.
+        let colourMenu = NSMenu()
+        for colour in BerryColour.all {
+            let c = item(colour.name, #selector(setColour(_:)))
+            c.representedObject = colour.id
+            c.state = Palette.current == colour ? .on : .off
+            c.image = Self.swatch(colour)
+            colourMenu.addItem(c)
+        }
+        menu.addItem(submenu("Colour: \(Palette.current.name)", colourMenu))
+
+        let aiMenu = NSMenu()
+        for provider in AIProvider.allCases {
+            let ready = provider.members.contains { Keychain.get(FocusAPI.key(for: $0)) != nil }
+            let p = item(provider.title + (ready ? "" : " (needs a key)"), #selector(setAIProvider(_:)))
+            p.representedObject = provider.rawValue
+            p.state = settings.aiProvider == provider ? .on : .off
+            aiMenu.addItem(p)
+        }
+        menu.addItem(submenu("AI Brain: \(settings.aiProvider.title)", aiMenu))
+
+        let keyMenu = NSMenu()
+        for key in Keychain.Key.allCases {
+            let k = item("\(key.title)\(Keychain.get(key) == nil ? "" : " ✓")…", #selector(editKeyItem(_:)))
+            k.representedObject = key.rawValue
+            keyMenu.addItem(k)
+        }
+        menu.addItem(submenu("AI Keys", keyMenu))
         menu.addItem(.separator())
 
         let trailMenu = NSMenu()
@@ -414,6 +487,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Quit Bluey", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+    }
+
+    private static func swatch(_ colour: BerryColour) -> NSImage {
+        NSImage(size: NSSize(width: 14, height: 14), flipped: false) { rect in
+            NSGradient(colors: [colour.berry1, colour.berry2, colour.berry3, colour.berry4].map { NSColor(hex: $0) })?
+                .draw(in: NSBezierPath(ovalIn: rect.insetBy(dx: 1, dy: 1)), angle: -60)
+            return true
+        }
     }
 
     /// Menu item that shows its global shortcut (⌃⌥ + key) when given one.

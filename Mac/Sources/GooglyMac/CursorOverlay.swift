@@ -530,6 +530,21 @@ final class CursorView: NSView {
 
         engine.onLand = { [weak self] point in self?.softLand(at: point) }
         engine.onLaunch = { [weak self] point in self?.puff(at: point) }
+        // Greenie, Reddie, Azure…: repaint the berry when the colour is changed in the menu or on the phone.
+        NotificationCenter.default.addObserver(forName: Palette.didChange, object: nil, queue: .main) { [weak self] _ in
+            self?.applyPalette()
+        }
+    }
+
+    /// Recolours everything that was painted with berry shades.
+    func applyPalette() {
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        stringLayer.strokeColor = NSColor(hex: Palette.berry1, alpha: 0.7).cgColor
+        trailLayer.fillColor = NSColor(hex: Palette.berry2, alpha: 1).cgColor
+        speechBorder.strokeColor = NSColor(hex: Palette.berry2, alpha: 1).cgColor
+        builtArt = nil  // the teardrop body is redrawn with the new gradient on the next frame
+        CATransaction.commit()
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }

@@ -56,7 +56,7 @@ struct BlueyAppView: View {
                 }
 
                 Button("Focus sessions", action: openFocus).buttonStyle(.borderedProminent)
-                Button("Pair Mac (QR)", action: pairMac).buttonStyle(.bordered)
+                Button("Pair Mac or PC (QR)", action: pairMac).buttonStyle(.bordered)
 
                 Button {
                     let starting = live.state == .asleep

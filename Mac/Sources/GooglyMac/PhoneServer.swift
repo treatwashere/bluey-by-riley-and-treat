@@ -17,7 +17,10 @@ final class PhoneServer {
     /// Called when a phone asks for something. The second argument replies to that phone.
     var onRequest: ((Packet, @escaping (Packet) -> Void) -> Void)?
 
-    var phoneNames: [String] { phones.values.map { $0.name ?? "iPhone" } }
+    /// Called once a phone has paired, with a way to send it its first settings.
+    var onAuthenticated: ((@escaping (Packet) -> Void) -> Void)?
+
+    var phoneNames: [String] { phones.values.map { $0.name ?? "Phone" } }
 
     func start() {
         do {
@@ -68,6 +71,7 @@ final class PhoneServer {
             self.phones[id] = (link, nil)
             link.send(Packet(hello: Host.current().localizedName ?? "Mac"))
             if let face = self.lastSent { link.send(Packet(face: face)) }
+            self.onAuthenticated? { [weak link] packet in link?.send(packet) }
             self.onPhonesChanged?(self.phoneNames)
         }
         link.onPacket = { [weak self, weak link] packet in

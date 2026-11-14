@@ -30,7 +30,7 @@ struct FocusFaceHUD: View {
             HStack(alignment: .bottom, spacing: 12) {
                 HStack(spacing: 2) {
                     if !link.connected {
-                        icon("qrcode.viewfinder", label: "Pair Mac", action: pair)
+                        icon("qrcode.viewfinder", label: "Pair computer", action: pair)
                     } else if let session = focus.current, session.status != .ended {
                         icon(session.status == .running ? "pause.fill" : "play.fill",
                              label: session.status == .running ? "Pause focus" : "Resume focus") {
@@ -99,7 +99,7 @@ struct FocusFaceHUD: View {
         }
     }
     private var status: String {
-        guard link.connected else { return "Pair your Mac to focus together" }
+        guard link.connected else { return "Pair your Mac or PC to focus together" }
         guard let session = focus.current, session.status != .ended else { return "Hold Bluey and describe a task" }
         guard focus.fresh else { return "Connection lost · monitoring will pause" }
         if session.status == .paused { return "Paused" }
@@ -123,6 +123,7 @@ struct FocusDashboard: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
+                    FriendSettings(link: link)
                     VStack(alignment: .leading, spacing: 8) {
                         Toggle("Developer Mode", isOn: Binding(
                             get: { focus.developerMode },
@@ -162,9 +163,9 @@ struct FocusDashboard: View {
                             .accessibilityIdentifier("startFocus")
                     }
                     if !focus.message.isEmpty { Text(focus.message).font(.plexSans(13)).foregroundStyle(.secondary) }
-                    Text("While focusing, Bluey sends your main Mac display, task, elapsed time, idle duration and recent check results to OpenAI every \(focus.developerMode ? 10 : 30) real seconds. Brief detours are fine. Stillness isn't distraction.")
+                    Text("While focusing, Bluey sends your main Mac display, task, elapsed time, idle duration and recent check results to the AI you picked (ChatGPT, Claude, Gemini, DeepSeek or all 4) every \(focus.developerMode ? 10 : 30) real seconds. Brief detours are fine. Stillness isn't distraction.")
                         .font(.plexSans(13)).foregroundStyle(.secondary)
-                    Text("Screen Recording is required on Mac; microphone is needed for voice. Screenshots aren't saved by Bluey. Pause, end, lock, sleep or disconnect stops capture. Resume is always manual. OpenAI processing follows your API account's data controls.")
+                    Text("Screen Recording is required on Mac (Windows needs nothing extra); microphone is needed for voice. Screenshots aren't saved by Bluey. Pause, end, lock, sleep or disconnect stops capture. Resume is always manual. Each AI provider's processing follows your API account's data controls.")
                         .font(.plexSans(13)).foregroundStyle(.secondary)
                     Divider()
                     Text("Your focus sessions").font(.fredoka(23))
@@ -339,5 +340,46 @@ struct FocusTimeline: View {
             }
         }.overlay(Rectangle().stroke(.white.opacity(0.3), lineWidth: 1))
             .accessibilityLabel("Focus timeline: green on task, peach off task, grey unknown")
+    }
+}
+
+
+/// Settings: his colour and which AI watches your focus. Both sync with the paired computer.
+struct FriendSettings: View {
+    @ObservedObject var link: MacLink
+    @AppStorage(Palette.defaultsKey) private var colourID = BerryColour.bluey.id
+    @AppStorage("aiProvider") private var providerID = AIProvider.chatgpt.rawValue
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Settings").font(.fredoka(23))
+            Text("Colour").font(.plexSans(13)).foregroundStyle(.secondary)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(BerryColour.all) { colour in
+                        Button {
+                            Palette.current = colour
+                            link.send(Packet(command: "colour", text: colour.id))
+                        } label: {
+                            VStack(spacing: 4) {
+                                Circle()
+                                    .fill(LinearGradient(colors: [colour.berry1, colour.berry2, colour.berry3, colour.berry4].map { Color(hex: $0) },
+                                                         startPoint: .topLeading, endPoint: .bottomTrailing))
+                                    .frame(width: 34, height: 34)
+                                    .overlay(Circle().stroke(Color.white, lineWidth: colourID == colour.id ? 3 : 0))
+                                Text(colour.name).font(.plexSans(11)).foregroundStyle(.white)
+                            }
+                        }.buttonStyle(.plain).accessibilityLabel(colour.name)
+                    }
+                }
+            }
+            Picker("AI brain", selection: Binding(get: { providerID }, set: { value in
+                providerID = value
+                link.send(Packet(command: "aiProvider", text: value))
+            })) {
+                ForEach(AIProvider.allCases, id: \.rawValue) { Text($0.title).tag($0.rawValue) }
+            }.pickerStyle(.menu).disabled(!link.connected)
+            Text("API keys stay on the computer: add them in Bluey's menu (Mac) or Settings window (Windows). Voice always uses ChatGPT.")
+                .font(.plexSans(12)).foregroundStyle(.secondary)
+        }
     }
 }

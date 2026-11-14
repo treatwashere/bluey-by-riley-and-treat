@@ -7,7 +7,7 @@ struct QRPairingView: View {
     @State private var error = ""
     var body: some View {
         VStack(spacing: 12) {
-            HStack { Text("Pair your Mac").font(.fredoka(24)); Spacer(); Button("Done") { dismiss() } }
+            HStack { Text("Pair your Mac or PC").font(.fredoka(24)); Spacer(); Button("Done") { dismiss() } }
             Text("Open Bluey's Mac menu > Pair iPhone (QR), then scan the code. Your phone and Mac must be on the same network.")
                 .font(.plexSans(14))
             QRScanner { text in

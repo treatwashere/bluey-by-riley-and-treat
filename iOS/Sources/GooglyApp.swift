@@ -25,10 +25,13 @@ struct RootView: View {
     @State private var showPairing = true
     @State private var holdStart: DispatchWorkItem?
     @State private var holdingToAsk = false
+    /// Greenie, Reddie, Azure…: changing it (here or on the computer) redraws the face.
+    @AppStorage(Palette.defaultsKey) private var colourID = BerryColour.bluey.id
 
     var body: some View {
         ZStack {
             FaceView(animator: animator)
+                .id(colourID)
                 .contentShape(Rectangle())
                 .onTapGesture(count: 2) { live.toggle() }  // double tap: wake up / back to follow mode
                 .simultaneousGesture(holdToAsk)
@@ -179,6 +182,10 @@ struct RootView: View {
             case "sleep": live.sleep()
             case "codexNote": live.codexNote(text ?? "")
             case "codexChirp": live.chirpAlone()
+            case "colour":
+                if let colour = BerryColour.named(text) { Palette.current = colour }
+            case "aiProvider":
+                if let provider = AIProvider(rawValue: text ?? "") { UserDefaults.standard.set(provider.rawValue, forKey: "aiProvider") }
             case "focusChirp":
                 focus.receivedNudge(text ?? "Are you sure you're on task right now?")
                 live.focusChirp()

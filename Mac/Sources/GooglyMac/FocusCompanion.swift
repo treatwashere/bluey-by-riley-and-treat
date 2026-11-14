@@ -34,7 +34,7 @@ final class FocusCompanion {
 
     init(now: @escaping () -> Double = { ProcessInfo.processInfo.systemUptime },
          permission: @escaping () -> Bool = { CGPreflightScreenCaptureAccess() },
-         hasKey: @escaping () -> Bool = { Keychain.get(.openai) != nil },
+         hasKey: @escaping () -> Bool = { FocusAPI.hasAnyKey },
          screenUnlocked: @escaping () -> Bool = {
             let session = CGSessionCopyCurrentDictionary() as? [String: Any]
             return session?["CGSSessionScreenIsLocked"] as? Bool != true && session?["kCGSessionOnConsoleKey"] as? Bool != false
@@ -101,7 +101,7 @@ final class FocusCompanion {
         guard !hasSession else { return "There's already a focus session. End it before starting another." }
         guard freshConnection else { return "Connect the paired phone first." }
         guard permission() else { return "Screen Recording is off. Enable Bluey in System Settings > Privacy & Security > Screen Recording, then reopen Bluey." }
-        guard hasKey() else { return "Add your OpenAI key in Bluey's Mac menu." }
+        guard hasKey() else { return FocusAPI.missingKeyMessage }
         cancel()
         current = FocusSession(task: task, duration: min(240, max(1, minutes)) * 60, developerMode: developerMode)
         policy = FocusNudgePolicy(maximumGap: current!.observationDuration * 1.5, developerMode: developerMode)
@@ -216,7 +216,7 @@ final class FocusCompanion {
                 self.current?.detail = "Check unavailable: \(error.localizedDescription.prefix(180))"
                 self.publish(); self.persist()
                 // Authentication/permission issues need intervention, not repeated paid calls.
-                if (error as? FocusAPI.Failure) != nil { self.pause(self.current?.detail ?? "OpenAI unavailable") }
+                if (error as? FocusAPI.Failure) != nil { self.pause(self.current?.detail ?? "AI unavailable") }
             }
         }
     }

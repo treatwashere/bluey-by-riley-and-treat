@@ -53,4 +53,15 @@ final class Settings {
         get { Mood(rawValue: defaults.string(forKey: "mood") ?? "") ?? .listening }
         set { defaults.set(newValue.rawValue, forKey: "mood"); onChange?() }
     }
+
+    /// Which AI judges the screen during focus: ChatGPT, Claude, Gemini, DeepSeek, or all 4 combined.
+    var aiProvider: AIProvider {
+        get { AIProvider(rawValue: defaults.string(forKey: "aiProvider") ?? "") ?? .chatgpt }
+        set { defaults.set(newValue.rawValue, forKey: "aiProvider"); onChange?() }
+    }
+
+    /// Model names, editable in defaults (`defaults write co.visionairy.googly.mac claudeModel …`).
+    var claudeModel: String { defaults.string(forKey: "claudeModel") ?? "claude-opus-5-5" }
+    var geminiModel: String { defaults.string(forKey: "geminiModel") ?? "gemini-flash-latest" }
+    var deepseekModel: String { defaults.string(forKey: "deepseekModel") ?? "deepseek-chat" }
 }

@@ -94,7 +94,7 @@ final class FocusClient: ObservableObject {
         if let data = try? JSONSerialization.data(withJSONObject: status) { try? data.write(to: target, options: .atomic) }
     }
     func command(_ command: String, task: String? = nil, minutes: Double = 30, developerMode: Bool? = nil) {
-        guard let link, link.connected else { message = "Connect your paired Mac first."; return }
+        guard let link, link.connected else { message = "Connect your paired computer first."; return }
         var args: [String: Any] = ["task": task ?? "", "minutes": minutes]
         if let developerMode { args["developerMode"] = developerMode }
         let data = try? JSONSerialization.data(withJSONObject: args)

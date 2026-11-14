@@ -25,7 +25,7 @@ struct PairingView: View {
                 }
                 .padding(.top, 4)
                 Button(action: onPlay) {
-                    Text("Pair Mac (scan QR)")
+                    Text("Pair Mac or PC (scan QR)")
                         .font(.plexSans(15).weight(.semibold))
                         .foregroundStyle(Color(hex: 0xF4F1FA))
                         .padding(.horizontal, 18)
