@@ -1,0 +1,114 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'">
+<title>Bluey Settings</title>
+<style>
+  :root { --bg: #15131c; --panel: #1e1b29; --line: #2e2a3d; --text: #f4f1fa; --soft: #b9b2cc; --berry: #6C86F5; --berry-deep: #4254D6; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 "Segoe UI Variable", "Segoe UI", system-ui, sans-serif; }
+  header { display: flex; align-items: center; gap: 14px; padding: 22px 28px 8px; }
+  header .mini { width: 44px; height: 38px; border-radius: 50% 50% 48% 48%; position: relative; }
+  header .mini::before, header .mini::after { content: ""; position: absolute; top: 11px; width: 11px; height: 12px; background: #fff; border-radius: 50%;
+    box-shadow: inset 2px 3px 0 3px #17151F; }
+  header .mini::before { left: 10px; } header .mini::after { left: 23px; }
+  h1 { font-size: 22px; margin: 0; font-weight: 650; }
+  #status { color: var(--soft); font-size: 13px; }
+  main { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 16px; padding: 12px 28px 32px; }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; }
+  section.wide { grid-column: 1 / -1; }
+  h2 { font-size: 15px; margin: 0 0 4px; }
+  p.hint { color: var(--soft); font-size: 12.5px; margin: 4px 0 12px; }
+  .swatches { display: flex; flex-wrap: wrap; gap: 12px; }
+  .swatch { background: none; border: 0; color: var(--text); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 5px; font: inherit; font-size: 12px; padding: 4px; border-radius: 10px; }
+  .swatch span.dot { width: 40px; height: 36px; border-radius: 50% 50% 48% 48%; outline: 3px solid transparent; outline-offset: 2px; }
+  .swatch[aria-pressed="true"] span.dot { outline-color: #fff; }
+  .swatch:focus-visible { outline: 2px solid var(--berry); }
+  .providers { display: grid; gap: 8px; }
+  .provider { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; cursor: pointer; }
+  .provider.on { border-color: var(--berry); background: rgba(108,134,245,.08); }
+  .provider small { color: var(--soft); margin-left: auto; font-size: 12px; }
+  .provider input { accent-color: var(--berry); }
+  .key { display: grid; grid-template-columns: 1fr auto; gap: 4px 8px; align-items: center; margin-bottom: 12px; }
+  .key .name { display: flex; justify-content: space-between; grid-column: 1 / -1; font-size: 13px; }
+  .key .ok { color: #5BE49B; font-size: 12px; }
+  input[type=password], input[type=text], input[type=number] { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: #110f17; color: var(--text); font: inherit; }
+  button.btn { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--line); background: #2a2638; color: var(--text); font: inherit; cursor: pointer; }
+  button.btn.primary { background: var(--berry-deep); border-color: var(--berry-deep); }
+  button.btn:disabled { opacity: .45; cursor: default; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+  .pair { display: flex; gap: 18px; align-items: flex-start; flex-wrap: wrap; }
+  .pair img { width: 200px; height: 200px; border-radius: 10px; background: #fff; filter: blur(9px); transition: filter .2s; cursor: pointer; }
+  .pair img.shown { filter: none; }
+  label.toggle { display: flex; gap: 8px; align-items: center; margin-top: 8px; cursor: pointer; }
+  #message { color: var(--soft); font-size: 13px; min-height: 18px; margin-top: 8px; }
+  details summary { cursor: pointer; color: var(--soft); margin-top: 10px; }
+  .models { display: grid; grid-template-columns: 150px 1fr; gap: 8px; margin-top: 10px; align-items: center; }
+  .timeline { display: flex; height: 10px; border-radius: 4px; overflow: hidden; background: #2a2638; margin: 6px 0 10px; }
+  .timeline i { flex: 1; } .timeline i.on_task { background: #5BE49B; } .timeline i.off_task { background: #EBAC73; } .timeline i.other { background: #555068; }
+  .hist { font-size: 13px; color: var(--soft); }
+</style>
+</head>
+<body>
+<header><div class="mini" id="mini"></div><div><h1 id="title">Bluey</h1><div id="status">Starting…</div></div></header>
+<main>
+  <section>
+    <h2>Pair a phone</h2>
+    <p class="hint">Open Bluey on your iPhone or Android phone (same Wi‑Fi), tap <b>Pair</b>, and scan this code. It's a private key: don't share or screenshot it. Click to reveal.</p>
+    <div class="pair">
+      <img id="qr" alt="Pairing QR code (click to reveal)">
+      <div>
+        <div class="hint" id="pairName"></div>
+        <div class="row"><button class="btn" id="copyCode">Copy code instead</button></div>
+        <div class="row"><button class="btn" id="resetCode">Make a new code</button></div>
+        <p class="hint">A new code unpairs every phone.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Colour</h2>
+    <p class="hint">Pick your berry friend. The phone and this PC change together.</p>
+    <div class="swatches" id="swatches"></div>
+  </section>
+
+  <section>
+    <h2>AI brain</h2>
+    <p class="hint">Which AI checks your screen during focus. “All 4 combined” asks every AI you have a key for and averages their votes.</p>
+    <div class="providers" id="providers"></div>
+  </section>
+
+  <section>
+    <h2>AI keys</h2>
+    <p class="hint">Stored only on this PC, encrypted with your Windows account. They never go to the phone. Voice on iPhone always uses ChatGPT.</p>
+    <div id="keys"></div>
+    <details><summary>Model names (advanced)</summary>
+      <div class="models" id="models"></div>
+    </details>
+  </section>
+
+  <section class="wide">
+    <h2>Focus</h2>
+    <p class="hint">You can also hold Bluey's face on the phone and say what you're working on. While focusing, a screenshot of your main display, the window title, the task and recent results go to your chosen AI every 30 seconds (10 in Developer Mode). Screenshots aren't saved. Locking the PC or disconnecting the phone pauses everything.</p>
+    <div class="row" id="startRow">
+      <input type="text" id="task" placeholder="What are we working on?" style="flex: 1; min-width: 220px">
+      <input type="number" id="minutes" value="30" min="1" max="240" style="width: 90px" aria-label="Minutes">
+      <button class="btn primary" id="start">Start focus</button>
+    </div>
+    <div class="row" id="sessionRow" hidden>
+      <b id="sessionTask"></b><span id="sessionClock" class="hint"></span>
+      <button class="btn" id="pauseResume">Pause</button><button class="btn" id="end">End focus</button>
+    </div>
+    <div class="hint" id="sessionDetail"></div>
+    <label class="toggle"><input type="checkbox" id="developer"> Developer Mode (4× clock, checks every 10 seconds)</label>
+    <div class="row"><button class="btn" id="testNudge" hidden>Test a nudge</button></div>
+    <label class="toggle"><input type="checkbox" id="showBuddy"> Show the desktop buddy in the corner</label>
+    <label class="toggle"><input type="checkbox" id="followMouse"> Phone's eyes follow my mouse</label>
+    <div id="message"></div>
+    <div id="history"></div>
+  </section>
+</main>
+<script src="settings.js"></script>
+</body>
+</html>

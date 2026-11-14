@@ -1,0 +1,56 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'">
+<title>Bluey</title>
+<style>
+  html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; font-family: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif; user-select: none; }
+  #wrap { position: absolute; inset: 0; }
+  #berry { position: absolute; left: 20px; bottom: 16px; width: 104px; height: 92px; border-radius: 50% 50% 48% 48%;
+    box-shadow: inset -8px -10px 18px rgba(0,0,0,.18), inset 8px 8px 16px rgba(255,255,255,.35); transition: background .4s, opacity .3s;
+    animation: bob 3.2s ease-in-out infinite; }
+  @keyframes bob { 50% { transform: translateY(-4px) scale(1.01, .99); } }
+  .eye { position: absolute; top: 26px; width: 26px; height: 30px; background: #fff; border-radius: 50%; overflow: hidden; }
+  .eye.l { left: 24px; } .eye.r { left: 56px; }
+  .pupil { position: absolute; left: 7px; top: 8px; width: 13px; height: 15px; background: #17151F; border-radius: 50%; transition: transform .08s linear; }
+  .eye::after { content: ""; position: absolute; inset: 0; background: inherit; transform: translateY(-100%); animation: blink 5.5s infinite; }
+  @keyframes blink { 0%, 95%, 100% { transform: translateY(-100%); } 97% { transform: translateY(0); } }
+  #nose { position: absolute; left: 47px; top: 60px; width: 12px; height: 8px; border-radius: 50%; }
+  #bubble { position: absolute; left: 24px; bottom: 120px; max-width: 300px; padding: 12px 16px; border-radius: 18px; background: #fff;
+    color: #17151F; font-size: 15px; line-height: 1.35; border: 2.5px solid; opacity: 0; transform: translateY(6px); transition: opacity .2s, transform .2s; }
+  #bubble.on { opacity: 1; transform: none; }
+  #bubble::after { content: ""; position: absolute; left: 44px; bottom: -11px; width: 16px; height: 16px; background: #fff;
+    border-right: 2.5px solid; border-bottom: 2.5px solid; border-color: inherit; transform: rotate(45deg); }
+  #clock { position: absolute; right: 12px; bottom: 6px; text-align: right; color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,.55); }
+  #clock .time { font-size: 64px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -1px; }
+  #clock .mode { font-size: 12px; font-weight: 600; letter-spacing: 1px; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="bubble"></div>
+  <div id="berry"><div class="eye l"><div class="pupil"></div></div><div class="eye r"><div class="pupil"></div></div><div id="nose"></div></div>
+  <div id="clock"><div class="mode"></div><div class="time"></div></div>
+</div>
+<script>
+  const berry = document.getElementById('berry');
+  const bubble = document.getElementById('bubble');
+  const pupils = document.querySelectorAll('.pupil');
+  window.bluey.onState((s) => {
+    const [a, b, c, d] = s.colour.berry;
+    berry.style.background = `linear-gradient(135deg, ${a} 0%, ${b} 34%, ${c} 68%, ${d} 100%)`;
+    berry.style.opacity = s.show ? 1 : 0;
+    document.getElementById('nose').style.background = s.colour.nose;
+    bubble.style.borderColor = b;
+    bubble.textContent = s.bubble || '';
+    bubble.classList.toggle('on', !!s.bubble);
+    document.querySelector('#clock .time').textContent = s.countdown || '';
+    document.querySelector('#clock .mode').textContent = s.countdown && s.developer ? 'DEVELOPER MODE · 4×' : '';
+  });
+  window.bluey.onGaze((g) => {
+    for (const p of pupils) p.style.transform = `translate(${g.x * 6}px, ${g.y * 7}px)`;
+  });
+</script>
+</body>
+</html>
