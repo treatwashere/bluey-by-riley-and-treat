@@ -1,106 +1,118 @@
-# Bluey
+# Bluey by Riley and Treat
 
-Bluey is a little blueberry focus friend. Keep your iPhone sideways under your Mac monitor: his eyes follow your mouse, and his matching blue cursor appears when he has something to point out. Same character, animation, British personality, speech bubbles and cartoon chirp. No spoken voice output and no glow.
+A little berry focus friend who lives on your phone, sits under your computer screen, watches your screen with AI while you focus, and gives you a gentle nudge when you drift off task.
 
-## Start focusing
+This is [rbrown101010/bluey-by-riley](https://github.com/rbrown101010/bluey-by-riley) with three big additions:
 
-1. Run Bluey on your Mac and iPhone on the same local network.
-2. On Mac, choose **Pair iPhone (QR)…** from Bluey's menu. On iPhone choose **Pair Mac**, then scan the code. Treat this code as a private pairing credential.
-3. Add your OpenAI API key through **OpenAI Key…** in the Mac menu. It stays in `~/Library/Application Support/Googly/keys.json`, with private file permissions. It never goes to the phone or into this repository.
-4. Grant **Screen Recording** on Mac. If macOS requests it, quit and reopen Bluey after granting access. **Microphone** on iPhone enables voice; **Camera** is used only for QR pairing; **Local Network** lets the phone find the Mac. Accessibility is optional for the existing explicitly requested computer-control tools, and isn't needed for focus classification.
-5. Hold Bluey's face and describe the task, optionally giving a duration: “I'm making a Codex video for 30 minutes.” Release to start. The microphone captures while held and buffers the beginning in memory while the voice connection starts. Only held audio is sent; no spoken audio output is played. The default is 30 minutes, with a 1–240 minute range. You can also tap **Focus**, type a task, and start there.
+1. **Colours.** Pick your friend: **Bluey**, **Greenie**, **Reddie**, **Azure**, **Purply**, **Pinky**, **Sunny** or **Orangey**. Change it on the computer or the phone and both change together.
+2. **Any computer, any phone.** **Mac or Windows** on the computer, **iPhone or Android** on the phone, in any combination.
+3. **Choose the AI.** In the settings menu, pick **ChatGPT**, **Claude**, **Gemini**, **DeepSeek**, or **All 4 combined**, where every AI you have a key for votes and Bluey averages the answers.
 
-The task appears at the phone's top left, with a large white countdown at bottom right on both devices. Small pause/resume, end and Focus icons sit at the phone's bottom left, alongside the listening status icon. Hold Bluey's face to speak. Controls are also available in the Mac menu and through voice. **⌃⌥S** pauses focus and stops computer control. Pause, end, expiry, Mac lock/sleep, phone backgrounding or disconnect stops monitoring. Reconnection and unlocking never resume it automatically. A missing heartbeat is detected within five seconds; outstanding results are discarded.
+![The eight colours](docs/previews/colours.png)
 
-**Developer Mode:** turn it on at the top of **Focus** on the phone or in Bluey's Mac menu. The countdown runs **4× faster**, and the Mac checks the screen every **10 real seconds**. Repeated majority off-task choices nudge after two or three checks (about **20–30 real seconds**, plus request time); cooldown is 30 real seconds. **Test a nudge** checks the Mac bubble and phone chirp immediately without taking a screenshot. Changes take effect immediately on both devices, including during a session. Test sessions are labelled in history with their real active time, and the setting is remembered on the Mac. A fresh installation defaults to normal speed. Turning it off restores the real-time clock, 30-second checks and two-to-four-minute evidence span. Pause, lock and disconnect still stop capture normally.
+## Which apps to use
 
-## Screen sharing and privacy
+| | iPhone | Android |
+|---|---|---|
+| **Mac** | `Mac/` + `iOS/` | `Mac/` + `android/` |
+| **Windows** | `windows/` + `iOS/` | `windows/` + `android/` |
 
-During a running focus session the Mac captures its **main display every 30 seconds** (every **10 real seconds in Developer Mode**), excluding Bluey's own windows, and sends a reduced JPEG to OpenAI with the declared task, active elapsed time, idle duration and up to eight recent check results. Real active time is distinguished from the accelerated test clock. If a nudge becomes due, a separate Responses request receives a fresh image and OCR target labels to prepare a short bubble and optional pointer target. No automatic clicking, app closing, website blocking or Codex delegation occurs in the monitoring path.
+Everything pairs the same way: open Bluey on the computer, open Bluey on the phone (same Wi‑Fi), tap **Pair**, and scan the QR code.
 
-Bluey keeps screenshots in memory and does not save them by default. Local focus history stores the task, timings, classifications, model probability/confidence estimates and nudge markers, not images or OCR text. Mac history is `~/Library/Application Support/Googly/focus-history.json`; a copy is retained on the phone. OpenAI's processing and retention follow your API account's data controls; “not saved by Bluey” is not a promise of zero retention by OpenAI. Pause before opening anything you don't want shared.
+## Getting the apps
 
-The phone gets short-lived Realtime client secrets, never the Mac's long-lived key. Bonjour discovery still uses `_googly._tcp`, but connections now authenticate using a QR-shared 256-bit secret, a fresh challenge and HMAC. Direction-specific HKDF keys protect ordered AES-GCM records against eavesdropping, tampering and replay. Unpaired clients cannot request screenshots, tools or Realtime secrets. The phone stores its pairing credential in its device-only Keychain. The Mac stores its pairing credential in a private support file. Older builds using plaintext pairing must be updated on both devices.
+### Windows
 
-## How nudges work
+Each push to GitHub builds a Windows installer: open the **Actions** tab, pick the latest **Build and test** run and download **Bluey-Windows**. It contains `Bluey Setup 0.2.0.exe` (installer) and `Bluey 0.2.0.exe` (portable, no install needed).
 
-The [Decisions API](https://developers.openai.com/api/docs/guides/decisions) is called at `POST /v1/decisions` using `gpt-6-luna` and a **choice** question named `activity`: `on_task`, `off_task`, or `uncertain`. The app parses `choice`, the per-choice `probabilities`, and separate `confidence`. It does not expect explanations or coordinates.
-
-Related tutorials, focused research, reading and waiting for a build can support the specific task. General social-feed browsing does not become on-task merely because an AI or Codex keyword appears. Social media research can still be on-task when it directly serves the declared task. The classifier receives bounded OCR text and the frontmost app name alongside the image, so small screen text remains readable. None of that text is stored. A still mouse is never proof of distraction. Screenshot text is untrusted evidence, never instructions.
-
-- Only consecutive off-task choices with P(off_task) at least 0.5 accumulate evidence. The separate API confidence score is displayed for inspection; it does not veto an off-task probability a second time.
-- In normal mode, mean P(off_task) at 0.95 or above requires an evidence span of **120 seconds**. From 0.5 to 0.95 the span falls gradually from **240 to 120 seconds**. For example 0.65 requires about 200 seconds, reached at the next 30-second check. Developer Mode uses a 40-to-80 focus-second span, so two or three ten-real-second checks can trigger a nudge.
-- On-task, uncertain, failed, malformed, stale (>20 real seconds), out-of-order or missing checks reset the evidence run. A missing check means a gap over 1.5 observation intervals (45 focus-clock seconds normally, 60 in Developer Mode). Pause/end reset it too. Changing Developer Mode discards pending results and starts fresh evidence.
-- A nudge resets the run and has a 120-second cooldown. Model estimates are not calibrated certainty; these are conservative initial product thresholds, not measured accuracy guarantees.
-- Responses (`gpt-5.5`, structured output, `store: false`, eight-second wording timeout) writes one gentle sentence. A failed extra capture or wording request falls back to “Are you sure you're on task right now?” It can select only an existing OCR line, with an exact matching quote. The app re-reads its position and checks the foreground app before pointing. Ambiguous or changed targets get a bubble alone. The same nudge text also appears briefly on the phone, alongside its chirp.
-
-Sessions show a rectangular timeline on iPhone: green on-task samples, peach off-task samples, grey unknown/unavailable/unchecked time. The main face screen also shows the latest **On task**, **Off task** or uncertain status. Tap the timeline or **On task**, **Off task**, or **Unknown** to inspect individual checks, their category probabilities and separate overall decision confidence. Older checks may have only the Off task probability; missing values are labelled, never inferred. Failed or stale checks have no valid confidence estimate. The timeline represents periodic observations rather than an exact time audit. Paused time is excluded.
-
-## Build and run
-
-Keep existing internal names and bundle IDs (`GooglyMac`, `GooglyEyes`, `co.visionairy.googly.*`). Renaming them resets permissions and pairing.
-
-Mac (SwiftPM, macOS 14+):
+To run it from the source code instead, install [Node.js](https://nodejs.org) 22 or newer, then:
 
 ```sh
-./scripts/build-mac.sh
-pkill -x GooglyMac
-open build/Bluey.app --args --pair
+cd windows
+npm install
+npm start
 ```
 
-The script signs with an available Apple Development certificate and stages signing outside iCloud-managed Documents. The app remains a menu bar app.
+Bluey appears in the system tray (bottom right, by the clock). Click it to open **Settings**:
 
-Phone (Xcode, iOS 17+):
+![Windows settings](docs/previews/windows-settings.png)
+
+- **Pair a phone**: click the blurred code to show it, then scan it with the phone. On Android you can also use **Copy code instead** and paste it into the phone.
+- **Colour**: pick your berry.
+- **AI brain**: ChatGPT, Claude, Gemini, DeepSeek or All 4 combined.
+- **AI keys**: paste a key for each AI you want to use. Keys are encrypted with your Windows account and never go to the phone.
+- **Focus**: start, pause and end sessions, Developer Mode, and your recent timelines.
+
+A small berry sits in the bottom-right corner of the screen with the countdown and speech bubbles. You can hide it in Settings or from the tray menu.
+
+### Android
+
+**Actions** → latest **Build and test** run → download **Bluey-Android** and install the `.apk` (Android 8 or newer; allow installing from your browser or file manager when asked).
+
+To build it yourself, open the `android` folder in Android Studio and press **Run**, or run `./gradlew :app:assembleDebug`.
+
+Turn the phone sideways under your screen. **Hold the face** and say what you're working on, like “maths homework for 45 minutes”, and let go. Saying “pause”, “resume” or “stop” controls a running session. Tap **☰** (or double-tap the face) for colours, the AI brain, pairing, typing a task, Developer Mode and your history.
+
+### Mac and iPhone
+
+These are the original apps, now with colours and the AI picker. Build them as before (see [the Mac and iPhone guide](docs/mac-and-iphone.md)):
 
 ```sh
-xcodegen generate
-xcodebuild -project GooglyEyes.xcodeproj -scheme GooglyEyes \
-  -configuration Debug -destination 'generic/platform=iOS' \
-  -derivedDataPath /tmp/BlueyFocusDerivedData build
-xcrun devicectl list devices
-xcrun devicectl device install app --device <your-device-id> \
-  /tmp/BlueyFocusDerivedData/Build/Products/Debug-iphoneos/Bluey.app
-xcrun devicectl device process launch --device <your-device-id> \
-  --terminate-existing co.visionairy.googly.phone
+./scripts/build-mac.sh && open build/Bluey.app --args --pair
+xcodegen generate   # then build the GooglyEyes scheme to your iPhone in Xcode
 ```
 
-Set your own development team in `project.yml` when building on another Mac. Build outside Documents to avoid iCloud extended attributes breaking signing.
+On the Mac, everything is in Bluey's menu bar menu: **Colour**, **AI Brain** and **AI Keys**. On the iPhone, the colour swatches and AI brain picker are at the top of the **Focus** sheet.
+
+## Choosing the AI
+
+| Choice | What it uses | Key from |
+|---|---|---|
+| ChatGPT | OpenAI's Decisions API with the screenshot and screen text | [platform.openai.com](https://platform.openai.com/api-keys) |
+| Claude | Claude Opus 5.5 with the screenshot and screen text | [console.anthropic.com](https://console.anthropic.com/settings/keys) |
+| Gemini | Gemini Flash (latest) with the screenshot and screen text | [aistudio.google.com](https://aistudio.google.com/apikey) |
+| DeepSeek | DeepSeek chat. It reads **text only**: the screen text on Mac, or the window title on Windows | [platform.deepseek.com](https://platform.deepseek.com/api_keys) |
+| All 4 combined | Asks every AI you have a key for at the same time, averages their on-task, off-task and unsure estimates, and goes with the strongest | Any of the above (you don't need all four) |
+
+- Model names can be changed: on Windows under **Settings → AI keys → Model names**; on Mac with `defaults write co.visionairy.googly.mac claudeModel <name>` (also `geminiModel`, `deepseekModel`).
+- Nudge wording comes from the AI you picked. With All 4 combined, it comes from the first one that has a key.
+- **Voice on iPhone always uses ChatGPT** (OpenAI Realtime), so add an OpenAI key if you want to talk to Bluey on an iPhone. Android uses the phone's own speech recognition instead and doesn't need any key for voice.
+
+## Privacy
+
+While a focus session runs, the computer sends a screenshot of its main screen to the AI you picked every 30 seconds (every 10 in Developer Mode), with the task, the time so far, and the last few results. With All 4 combined, it goes to every AI you have a key for. Bluey doesn't save screenshots. Locking the computer, closing the phone app or disconnecting pauses everything, and resuming is always manual. Each AI company's own data rules apply to your API account.
+
+The phone and computer pair with a private QR code and encrypt everything they send each other (details in [docs/PROTOCOL.md](docs/PROTOCOL.md)). API keys stay on the computer.
+
+## What's different on each computer
+
+| | Mac | Windows |
+|---|---|---|
+| Focus sessions, nudges and timelines | ✓ | ✓ |
+| Colours, AI brain, AI keys | ✓ | ✓ |
+| Phone's eyes follow your mouse | ✓ | ✓ |
+| Talk to Bluey from an iPhone | ✓ | ✓ (focus commands only) |
+| Desktop character | Big cursor that points at things | Small berry in the corner |
+| Reads small screen text (OCR) | ✓ | Window title only |
+| Points at things, clicks and types for you, Codex, meeting notes | ✓ | Not yet |
 
 ## Tests
 
-Deterministic fixtures, no real API calls:
-
 ```sh
-swift test --scratch-path /tmp/bluey-focus-swift
+cd windows && npm test                         # Windows: link, focus engine, all 4 AIs (no real API calls)
+cd android && ./gradlew :core:test             # Android: encryption, pairing, focus snapshots, spoken tasks
+swift test --scratch-path /tmp/bluey-swift      # Mac/iPhone shared code (on a Mac)
 ```
 
-Tests cover timing, resets, cooldowns, stale/invalid answers, pause/resume/expiry, synchronization payloads, permission failure, disconnect/lock, cancellation and encrypted loopback pairing. A separate opt-in live probe calls the production API code with **synthetic images**, never your desktop:
-
-```sh
-swift run GooglyMac --focus-api-test
-```
-
-With a separate signed Bluey app already running, `build/Bluey.app/Contents/MacOS/GooglyMac --focus-link-test` exercises real Bonjour discovery, authenticated encryption, a 30-second desktop capture/Decisions check and synchronized pause/resume/end. It creates a labelled integration-test entry in history and skips an existing active user session. `--focus-screen-test` makes one real desktop capture/Decisions request without saving an image. These probes share your screen with OpenAI; do not run them while displaying private content.
-
-`build/Bluey.app/Contents/MacOS/GooglyMac --focus-developer-test` checks the same live path at 4× clock speed and the ten-real-second cadence, then restores the previous Developer Mode setting. It also skips an existing active session.
-
-`build/Bluey.app/Contents/MacOS/GooglyMac --focus-nudge-test` sends the same immediate test notification as the phone's **Test a nudge** button. It requires Developer Mode and secure pairing, captures no screen, and leaves focus sessions unchanged. Automatic nudge delivery, fallback failures and cancellation also have fixture-based coordinator tests.
-
-Latest local verification: **22 deterministic tests passed**, both signed targets built, and the updated apps were installed and opened on Mac and a physical iPhone 16 Pro. QR pairing and voice-to-task were verified on the phone. Live integration checked the scheduled Decisions request, 4× clock, pause/resume/end and synchronized history. A real Mac test bubble was visually checked, and the phone confirmed receiving the nudge notification.
-
-Live API tests using **synthetic screenshots and OCR** classified an unrelated Twitter feed as off-task and directly relevant Twitter research as on-task. Automatic nudge delivery, capture/wording failures and cancellation were covered by injected fixture tests. These are separate from the physical notification test. Real off-task browsing with the latest classifier, audible chirp loudness and pointer targeting still need a manual device run; the synthetic examples are not an accuracy benchmark.
-
-## Existing capabilities
-
-The existing manual pointing, voice context, research cards, Codex controller and session history remain available. The focus path does not start the old continuous meeting-audio recorder by default. Realtime output remains text only, with bubbles and chirps. The long-lived key stays on the Mac.
+The Windows and Android tests run here and pass, and a simulated Android phone was paired with the Windows app end to end over the network (discovery, encrypted pairing, colour sync, starting focus, voice tools). The **Build and test** GitHub Action builds all four apps on real Windows, Linux and macOS machines. The Swift changes and the Android screens couldn't be compiled in the environment these changes were made in, so check that first Action run before relying on them.
 
 ## Layout
 
-- `Shared/`: pairing transport, palette, focus state and deterministic nudge policy.
-- `Mac/`: menu bar app, screenshot classifier, nudge generator, timer and existing tools.
-- `iOS/`: face, voice input, QR pairing, synchronized controls and focus timelines.
-- `Tests/`: deterministic logic, lifecycle and secure transport tests.
+- `Shared/`: Mac and iPhone code shared by both (secure link, colours, AI choice, focus rules).
+- `Mac/`: Mac menu bar app. `iOS/`: iPhone app.
+- `windows/`: Windows tray app (Electron). `android/`: Android app (`core/` is plain Kotlin and tested on any computer, `app/` is the Android UI).
+- `docs/`: the protocol, the original Mac and iPhone guide, and pictures.
 
 ## License
 
-Public domain under [the Unlicense](LICENSE). Do whatever you want with it.
+Public domain under [the Unlicense](LICENSE), like the original. Do whatever you want with it.

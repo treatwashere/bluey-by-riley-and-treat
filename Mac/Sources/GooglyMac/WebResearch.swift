@@ -21,7 +21,7 @@ enum WebResearch {
         case noKey, failed(String)
         var errorDescription: String? {
             switch self {
-            case .noKey: return "I need an OpenAI API key for research. Add one under OpenAI Key in the menu bar."
+            case .noKey: return "I need an OpenAI API key for research. Add one under AI Keys → ChatGPT (OpenAI) in the menu bar."
             case .failed(let why): return "The research didn't come back: \(why.prefix(160))"
             }
         }

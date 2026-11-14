@@ -648,7 +648,7 @@ final class RealtimeHost {
         case noKey, failed(String)
         var errorDescription: String? {
             switch self {
-            case .noKey: return "I need an OpenAI API key. Add one under OpenAI Key in the menu bar."
+            case .noKey: return "Voice needs a ChatGPT (OpenAI) key. Add one under AI Keys in the menu bar."
             case .failed(let why): return "OpenAI wouldn't start a voice session: \(why.prefix(160))"
             }
         }

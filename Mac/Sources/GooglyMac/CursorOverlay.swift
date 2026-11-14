@@ -532,7 +532,7 @@ final class CursorView: NSView {
         engine.onLaunch = { [weak self] point in self?.puff(at: point) }
         // Greenie, Reddie, Azure…: repaint the berry when the colour is changed in the menu or on the phone.
         NotificationCenter.default.addObserver(forName: Palette.didChange, object: nil, queue: .main) { [weak self] _ in
-            self?.applyPalette()
+            MainActor.assumeIsolated { self?.applyPalette() }
         }
     }
 

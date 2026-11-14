@@ -82,7 +82,7 @@ enum FocusAPI {
         // All 4 combined: ask every AI that has a key at once and average their answers.
         let answers = await withTaskGroup(of: FocusDecision?.self) { group in
             for provider in providers {
-                group.addTask { try? await classify(screen, session: session, idle: idle, with: provider) }
+                group.addTask { try? await FocusAPI.classify(screen, session: session, idle: idle, with: provider) }
             }
             var all: [FocusDecision] = []
             for await answer in group { if let answer { all.append(answer) } }

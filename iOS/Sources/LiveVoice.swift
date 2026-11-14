@@ -119,7 +119,7 @@ final class LiveVoice: NSObject, ObservableObject {
                 requestToken { token in
                     DispatchQueue.main.async {
                         guard self.state == .waking else { return }
-                        guard let token else { self.feedback = "Voice could not connect. Check the Mac and OpenAI key."; self.onCaption?(self.feedback, true); self.sleep(); return }
+                        guard let token else { self.feedback = "Voice could not connect. Check the computer and its ChatGPT (OpenAI) key."; self.onCaption?(self.feedback, true); self.sleep(); return }
                         self.connect(token)
                     }
                 }
