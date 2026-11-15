@@ -8,6 +8,12 @@ contextBridge.exposeInMainWorld('bluey', {
   setKey: (name, value) => ipcRenderer.invoke('key', name, value),
   focus: (command, args) => ipcRenderer.invoke('focus', command, args),
   pairing: (action) => ipcRenderer.invoke('pairing', action),
+  action: (name) => ipcRenderer.invoke('action', name),
   onState: (callback) => ipcRenderer.on('state', (_e, state) => callback(state)),
-  onGaze: (callback) => ipcRenderer.on('gaze', (_e, gaze) => callback(gaze)),
+  // The cursor overlay
+  onOverlay: (callback) => ipcRenderer.on('overlay', (_e, message) => callback(message)),
+  overlayState: (state) => ipcRenderer.send('overlay-state', state),
+  // The research card
+  onReport: (callback) => ipcRenderer.on('report', (_e, state) => callback(state)),
+  reportAction: (action, url) => ipcRenderer.send('report-action', action, url),
 });

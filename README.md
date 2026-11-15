@@ -8,7 +8,9 @@ This is [rbrown101010/bluey-by-riley](https://github.com/rbrown101010/bluey-by-r
 2. **Any computer, any phone.** **Mac or Windows** on the computer, **iPhone or Android** on the phone, in any combination.
 3. **Choose the AI.** In the settings menu, pick **ChatGPT**, **Claude**, **Gemini**, **DeepSeek**, or **All 4 combined**, where every AI you have a key for votes and Bluey averages the answers.
 
-![The eight colours](docs/previews/colours.png)
+Every colour is the original Bluey: the same blob, crown, eyebrows, big googly eyes, rosy cheeks and moods, on iPhone and Android alike.
+
+![The original Bluey face in all eight colours](docs/previews/all-colours.png)
 
 ## Which apps to use
 
@@ -33,17 +35,21 @@ npm install
 npm start
 ```
 
-Bluey appears in the system tray (bottom right, by the clock). Click it to open **Settings**:
+Bluey appears in the system tray (bottom right, by the clock), and his googly-eyed cursor lives on your screen, just like on the Mac. It tucks into the phone while his eyes follow your mouse, flies out to point at things, squishes when it clicks, and talks in a speech bubble.
+
+![Bluey's cursor on Windows, pointing and talking](docs/previews/windows-cursor.png)
+
+Right-click the tray icon for the same menu as the Mac (wake, stop him, point here, mood, cursor size, trail, colour, AI brain, Codex). Double-click it for **Settings**:
 
 ![Windows settings](docs/previews/windows-settings.png)
 
 - **Pair a phone**: click the blurred code to show it, then scan it with the phone. On Android you can also use **Copy code instead** and paste it into the phone.
-- **Colour**: pick your berry.
-- **AI brain**: ChatGPT, Claude, Gemini, DeepSeek or All 4 combined.
+- **Colour** and **AI brain**, with a live preview of his face.
 - **AI keys**: paste a key for each AI you want to use. Keys are encrypted with your Windows account and never go to the phone.
+- **His cursor**, **Using the computer**, **Personality**, **Codex** and **Meeting notes**.
 - **Focus**: start, pause and end sessions, Developer Mode, and your recent timelines.
 
-A small berry sits in the bottom-right corner of the screen with the countdown and speech bubbles. You can hide it in Settings or from the tray menu.
+Hotkeys (Ctrl+Alt instead of the Mac's ⌃⌥): **Ctrl+Alt+Space** wake him up, **Ctrl+Alt+P** point here, **Ctrl+Alt+F** eyes follow mouse, **Ctrl+Alt+D** stop pointing, **Ctrl+Alt+H** hide cursor, **Ctrl+Alt+T** talk test, **Ctrl+Alt+S** stop him.
 
 ### Android
 
@@ -84,27 +90,34 @@ While a focus session runs, the computer sends a screenshot of its main screen t
 
 The phone and computer pair with a private QR code and encrypt everything they send each other (details in [docs/PROTOCOL.md](docs/PROTOCOL.md)). API keys stay on the computer.
 
-## What's different on each computer
+## Mac and Windows side by side
+
+Windows now does what the Mac does. Talk to him on an iPhone (hold his face) and he can:
 
 | | Mac | Windows |
 |---|---|---|
 | Focus sessions, nudges and timelines | ✓ | ✓ |
 | Colours, AI brain, AI keys | ✓ | ✓ |
-| Phone's eyes follow your mouse | ✓ | ✓ |
-| Talk to Bluey from an iPhone | ✓ | ✓ (focus commands only) |
-| Desktop character | Big cursor that points at things | Small berry in the corner |
-| Reads small screen text (OCR) | ✓ | Window title only |
-| Points at things, clicks and types for you, Codex, meeting notes | ✓ | Not yet |
+| Googly-eyed cursor: follows, points, comet trail or string, speech bubble | ✓ | ✓ |
+| Look at the screen and read every word | ✓ (Apple Vision) | ✓ (Windows OCR, built in) |
+| Click, type, press keys, scroll, drag | ✓ | ✓ (never into password fields) |
+| Open apps and websites | ✓ | ✓ (from the Start menu) |
+| Web research card | ✓ | ✓ |
+| Codex jobs | ✓ | ✓ (install with `npm install -g @openai/codex`, then `codex login`) |
+| Meeting notes from the iPhone's recordings | ✓ | ✓ (saved in Documents\Bluey Notes) |
+| Personality, mood, cursor size, hotkeys | ✓ | ✓ |
+
+Talking to him by voice needs an iPhone and a ChatGPT (OpenAI) key, on both computers. The Android app uses the phone's own speech recognition, so you can tell it your task, and say pause, resume or stop, but it doesn't chat or run these tools yet.
 
 ## Tests
 
 ```sh
-cd windows && npm test                         # Windows: link, focus engine, all 4 AIs (no real API calls)
+cd windows && npm test                         # Windows: link, focus, all 4 AIs, his tools, Codex, notes (no real API calls)
 cd android && ./gradlew :core:test             # Android: encryption, pairing, focus snapshots, spoken tasks
 swift test --scratch-path /tmp/bluey-swift      # Mac/iPhone shared code (on a Mac)
 ```
 
-The Windows and Android tests run here and pass, and a simulated Android phone was paired with the Windows app end to end over the network (discovery, encrypted pairing, colour sync, starting focus, voice tools). The **Build and test** GitHub Action builds all four apps on real Windows, Linux and macOS machines. The Swift changes and the Android screens couldn't be compiled in the environment these changes were made in, so check that first Action run before relying on them.
+The Windows and Android tests pass, and a simulated phone was paired with the Windows app end to end over the network (discovery, encrypted pairing, colour sync, focus, looking at the screen, pointing, Codex status). The cursor and face pictures above are rendered from the real Windows code. Clicking, typing, Windows OCR and opening apps can only run on real Windows, so the GitHub Action's Windows job tests the helper there. The **Build and test** GitHub Action builds all four apps on real Windows, Linux and macOS machines. The Swift changes and the Android screens couldn't be compiled in the environment these changes were made in, so check that first Action run before relying on them.
 
 ## Layout
 

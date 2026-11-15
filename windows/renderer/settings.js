@@ -76,8 +76,17 @@ function build() {
   $('end').onclick = async () => say(await window.bluey.focus('end'));
   $('developer').onchange = async (e) => say(await window.bluey.focus('developer', { enabled: e.target.checked }));
   $('testNudge').onclick = async () => say(await window.bluey.focus('testNudge'));
-  $('showBuddy').onchange = async (e) => render(await window.bluey.set('showBuddy', e.target.checked));
-  $('followMouse').onchange = async (e) => render(await window.bluey.set('followMouse', e.target.checked));
+  for (const id of ['showCursor', 'followMouse', 'computerControl']) $(id).onchange = async (e) => render(await window.bluey.set(id, e.target.checked));
+  for (const id of ['cursorSize', 'phonePosition']) $(id).onchange = async (e) => render(await window.bluey.set(id, Number(e.target.value)));
+  for (const id of ['trail', 'mood']) $(id).onchange = async (e) => render(await window.bluey.set(id, e.target.value));
+  for (const m of state.moods) { const o = document.createElement('option'); o.value = m; o.textContent = m[0].toUpperCase() + m.slice(1); $('mood').append(o); }
+  $('savePersonality').onclick = async () => { render(await window.bluey.set('personality', $('personality').value.trim())); say('Personality saved. He picks it up next time he wakes.'); };
+  $('resetPersonality').onclick = async () => { $('personality').value = ''; render(await window.bluey.set('personality', '')); say('Back to his usual self.'); };
+  $('codexPath').onchange = async (e) => render(await window.bluey.set('codexPath', e.target.value.trim()));
+  for (const [id, action] of [['wake', 'wake'], ['stop', 'stop'], ['talkTest', 'talkTest'], ['codexFolder', 'codexFolder'], ['openNotes', 'notes']]) {
+    $(id).onclick = async () => render(await window.bluey.action(action));
+  }
+  window.BlueyFace.start($('face'), () => (state.colours.find((c) => c.id === state.settings.colour) || state.colours[0]));
 }
 
 function render(next) {
@@ -86,7 +95,6 @@ function render(next) {
   const colour = state.colours.find((c) => c.id === state.settings.colour) || state.colours[0];
   document.documentElement.style.setProperty('--berry', colour.berry[1]);
   document.documentElement.style.setProperty('--berry-deep', colour.berry[2]);
-  $('mini').style.background = gradient(colour);
   $('title').textContent = `${colour.name} · focus friend`;
   document.title = `${colour.name} Settings`;
   $('status').textContent = state.phones.length ? `Phone connected: ${state.phones.join(', ')}` : 'Waiting for your phone. Pair it below.';
@@ -118,8 +126,24 @@ function render(next) {
   } else $('sessionDetail').textContent = state.active.length ? '' : 'Add a key for your chosen AI before starting.';
   $('developer').checked = state.developerMode;
   $('testNudge').hidden = !state.developerMode;
-  $('showBuddy').checked = state.settings.showBuddy !== false;
+  $('showCursor').checked = state.settings.showCursor !== false;
   $('followMouse').checked = state.settings.followMouse !== false;
+  $('computerControl').checked = state.settings.computerControl !== false;
+  $('computerControl').disabled = !state.windows;
+  $('cursorSize').value = String(state.settings.cursorSize || 72);
+  $('trail').value = state.settings.trail || 'comet';
+  $('phonePosition').value = String(state.settings.phonePosition ?? 0.5);
+  $('mood').value = state.settings.mood || 'listening';
+  if (document.activeElement !== $('personality')) $('personality').value = state.settings.personality || state.defaultPersonality;
+  if (document.activeElement !== $('codexPath')) $('codexPath').value = state.settings.codexPath || '';
+  $('codexHint').textContent = state.codexInstalled
+    ? 'Codex is installed. Ask him to get Codex to do something; jobs run in Documents\\Bluey and he tells you when they finish.'
+    : 'Codex isn\u2019t installed. Install it with “npm install -g @openai/codex”, sign in with “codex login”, then restart Bluey.';
+  const jobs = $('codexJobs'); jobs.textContent = '';
+  for (const j of state.codexJobs) { const d = document.createElement('div'); d.textContent = `${j.project}: ${j.prompt} (${j.status})`; jobs.append(d); }
+  $('notesHint').textContent = `When the iPhone app records a session, transcripts with speaker labels are saved to ${state.notesFolder}. Uses your ChatGPT key.`;
+  $('wake').textContent = state.awake ? 'Go to Sleep' : 'Wake Up and Talk';
+  $('wake').disabled = !state.phones.length;
   const hist = $('history'); hist.textContent = '';
   for (const h of state.history.slice(0, 5)) {
     const div = document.createElement('div'); div.className = 'hist';

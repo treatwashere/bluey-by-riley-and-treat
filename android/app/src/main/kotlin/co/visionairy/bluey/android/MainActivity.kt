@@ -160,10 +160,9 @@ fun BlueyScreen(model: BlueyModel) {
     val session = model.focus?.current?.takeIf { it.isActive }
 
     Box(Modifier.fillMaxSize().background(Color.Black)) {
+        model.animator.localMood = if (listening) "listening" else null
         BerryFace(
-            colour = model.colour, gazeX = model.gazeX, gazeY = model.gazeY,
-            mood = if (listening) "listening" else if (!model.connected) "sleepy" else model.mood,
-            listening = listening,
+            colour = model.colour, animator = model.animator,
             modifier = Modifier.fillMaxSize()
                 .semantics { contentDescription = "${model.colour.name}. Hold to say what you're working on." }
                 .pointerInput(Unit) {

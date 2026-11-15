@@ -35,9 +35,8 @@ class BlueyModel(private val context: Context) {
     var paired by mutableStateOf(pairing.load() != null); private set
     var colour by mutableStateOf(Palette.named(prefs.getString("colour", null)) ?: Palette.bluey); private set
     var provider by mutableStateOf(AIProvider.from(prefs.getString("aiProvider", null)) ?: AIProvider.CHATGPT); private set
-    var gazeX by mutableStateOf(0f); private set
-    var gazeY by mutableStateOf(0f); private set
-    var mood by mutableStateOf("listening"); private set
+    /** The original Bluey face's animator; the computer drives where he looks and how he feels. */
+    val animator = FaceAnimator()
     var focus by mutableStateOf<FocusSync?>(null); private set
     var fresh by mutableStateOf(false); private set
     var bubble by mutableStateOf<String?>(null); private set
@@ -51,7 +50,6 @@ class BlueyModel(private val context: Context) {
         link.onConnectionChanged = { isConnected, name ->
             connected = isConnected; computerName = name
             fresh = false; revision = -1
-            if (!isConnected) mood = "sleepy"
         }
         link.onPacket = ::receive
         tick()
@@ -72,9 +70,8 @@ class BlueyModel(private val context: Context) {
 
     private fun receive(packet: JSONObject) {
         packet.optJSONObject("face")?.let { face ->
-            gazeX = face.optDouble("gazeX", 0.0).toFloat().coerceIn(-1f, 1f)
-            gazeY = face.optDouble("gazeY", 0.0).toFloat().coerceIn(-1f, 1f)
-            mood = face.optString("mood", "listening")
+            animator.receive(face.optDouble("gazeX", 0.0).coerceIn(-1.0, 1.0), face.optDouble("gazeY", 0.0).coerceIn(-1.0, 1.0),
+                face.optString("mood", "listening"), face.optDouble("talk", 0.0).coerceIn(0.0, 1.0), System.nanoTime() / 1e9)
         }
         when (packet.optString("command")) {
             "focusState" -> FocusJson.parseSync(packet.optString("text"))?.let { sync ->

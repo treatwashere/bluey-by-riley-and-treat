@@ -9,10 +9,13 @@
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 "Segoe UI Variable", "Segoe UI", system-ui, sans-serif; }
   header { display: flex; align-items: center; gap: 14px; padding: 22px 28px 8px; }
-  header .mini { width: 44px; height: 38px; border-radius: 50% 50% 48% 48%; position: relative; }
-  header .mini::before, header .mini::after { content: ""; position: absolute; top: 11px; width: 11px; height: 12px; background: #fff; border-radius: 50%;
-    box-shadow: inset 2px 3px 0 3px #17151F; }
-  header .mini::before { left: 10px; } header .mini::after { left: 23px; }
+  header { flex-wrap: wrap; align-items: flex-start; }
+  .phone { width: 300px; max-width: 100%; aspect-ratio: 844 / 390; border-radius: 26px; overflow: hidden; background: #000;
+    border: 6px solid #2a2638; box-shadow: 0 8px 30px rgba(0,0,0,.4); flex-shrink: 0; }
+  .phone canvas { width: 100%; height: 100%; display: block; }
+  select, textarea { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: #110f17; color: var(--text); font: inherit; }
+  textarea { min-height: 110px; resize: vertical; }
+  .grid2 { display: grid; grid-template-columns: 140px 1fr; gap: 8px 10px; align-items: center; margin-top: 8px; }
   h1 { font-size: 22px; margin: 0; font-weight: 650; }
   #status { color: var(--soft); font-size: 13px; }
   main { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 16px; padding: 12px 28px 32px; }
@@ -51,7 +54,13 @@
 </style>
 </head>
 <body>
-<header><div class="mini" id="mini"></div><div><h1 id="title">Bluey</h1><div id="status">Starting…</div></div></header>
+<header>
+  <div class="phone"><canvas id="face" aria-label="Bluey's face, as it looks on your phone"></canvas></div>
+  <div><h1 id="title">Bluey</h1><div id="status">Starting…</div>
+    <div class="row"><button class="btn" id="wake">Wake Up and Talk</button><button class="btn" id="talkTest">Talk Test</button><button class="btn" id="stop">Stop Him</button></div>
+    <p class="hint">Hotkeys: Ctrl+Alt+Space wake · Ctrl+Alt+P point here · Ctrl+Alt+F eyes follow mouse · Ctrl+Alt+D stop pointing · Ctrl+Alt+H hide cursor · Ctrl+Alt+T talk test · Ctrl+Alt+S stop him</p>
+  </div>
+</header>
 <main>
   <section>
     <h2>Pair a phone</h2>
@@ -88,6 +97,40 @@
     </details>
   </section>
 
+  <section>
+    <h2>His cursor</h2>
+    <p class="hint">Like on the Mac: he has his own googly-eyed cursor that flies out of the phone to point at things, and tucks away again.</p>
+    <label class="toggle"><input type="checkbox" id="showCursor"> Show his cursor</label>
+    <label class="toggle"><input type="checkbox" id="followMouse"> Eyes follow my mouse (cursor tucks into the phone when idle)</label>
+    <div class="grid2">
+      <span>Size</span><select id="cursorSize"><option value="48">Small</option><option value="72">Medium</option><option value="96">Large</option><option value="120">Huge</option></select>
+      <span>Trail</span><select id="trail"><option value="comet">Comet trail</option><option value="string">String to the phone</option><option value="none">No trail</option></select>
+      <span>Phone sits under</span><select id="phonePosition"><option value="0.2">Left</option><option value="0.5">Center</option><option value="0.8">Right</option></select>
+      <span>Mood</span><select id="mood"></select>
+    </div>
+  </section>
+
+  <section>
+    <h2>Using the computer</h2>
+    <p class="hint">When you ask him by voice (iPhone), he can click, type, press keys, scroll, drag, and open apps and websites. He never types passwords. Ctrl+Alt+S stops him instantly.</p>
+    <label class="toggle"><input type="checkbox" id="computerControl"> Let him use the computer</label>
+    <h2 style="margin-top:16px">Personality</h2>
+    <p class="hint">Who he is and how he talks. How he looks at and points at your screen stays built in.</p>
+    <textarea id="personality" spellcheck="true"></textarea>
+    <div class="row"><button class="btn" id="savePersonality">Save</button><button class="btn" id="resetPersonality">Reset to default</button></div>
+  </section>
+
+  <section>
+    <h2>Codex</h2>
+    <p class="hint" id="codexHint"></p>
+    <div id="codexJobs" class="hist"></div>
+    <div class="grid2"><span>codex.exe path</span><input type="text" id="codexPath" placeholder="Found automatically (optional)"></div>
+    <div class="row"><button class="btn" id="codexFolder">Add project folder…</button></div>
+    <h2 style="margin-top:16px">Meeting notes</h2>
+    <p class="hint" id="notesHint"></p>
+    <div class="row"><button class="btn" id="openNotes">Open meeting notes</button></div>
+  </section>
+
   <section class="wide">
     <h2>Focus</h2>
     <p class="hint">You can also hold Bluey's face on the phone and say what you're working on. While focusing, a screenshot of your main display, the window title, the task and recent results go to your chosen AI every 30 seconds (10 in Developer Mode). Screenshots aren't saved. Locking the PC or disconnecting the phone pauses everything.</p>
@@ -103,12 +146,11 @@
     <div class="hint" id="sessionDetail"></div>
     <label class="toggle"><input type="checkbox" id="developer"> Developer Mode (4× clock, checks every 10 seconds)</label>
     <div class="row"><button class="btn" id="testNudge" hidden>Test a nudge</button></div>
-    <label class="toggle"><input type="checkbox" id="showBuddy"> Show the desktop buddy in the corner</label>
-    <label class="toggle"><input type="checkbox" id="followMouse"> Phone's eyes follow my mouse</label>
     <div id="message"></div>
     <div id="history"></div>
   </section>
 </main>
+<script src="face.js"></script>
 <script src="settings.js"></script>
 </body>
 </html>
