@@ -291,7 +291,7 @@ class RealtimeHost {
       const shot = await this.reader.snapshot();
       this.snapshot = shot;
       let text = shot.targetList;
-      const m = control.mouseLocation(this.screen);
+      const m = this.mouseLocation ? this.mouseLocation() : control.mouseLocation(this.screen);
       const mx = Math.round(Math.min(Math.max(m.x / shot.size.w, 0), 1) * 1000), my = Math.round(Math.min(Math.max(m.y / shot.size.h, 0), 1) * 1000);
       text += `\nThe user's mouse pointer is at @${mx},${my}`;
       const under = shot.targetNear(m);

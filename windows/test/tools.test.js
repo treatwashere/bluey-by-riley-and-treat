@@ -24,7 +24,7 @@ function fakeHost(snapshot) {
     codex: { isInstalled: false, status: () => 'No Codex jobs yet.' },
     reader: { snapshot: async () => snapshot }, helper: { request: async () => ({ secure: false }) },
     reports: { loading() {}, show() {}, error() {} }, screen: { getPrimaryDisplay: () => ({ bounds: { width: 1000, height: 500 } }), getCursorScreenPoint: () => ({ x: 120, y: 60 }) },
-    colourName: () => 'Greenie', openExternal: async () => {},
+    colourName: () => 'Greenie', openExternal: async () => {}, mouseLocation: () => ({ x: 120, y: 60 }),
   });
   return { host, sent };
 }
@@ -72,7 +72,14 @@ test('Codex: starts a job over JSON-RPC, approves, and reports when done', async
   const oldHome = process.env.HOME; const oldProfile = process.env.USERPROFILE;
   process.env.HOME = home; process.env.USERPROFILE = home;
   try {
-    const codex = new CodexController({ getAdded: () => [], customPath: () => path.join(__dirname, 'fixtures', 'fake-codex.js') });
+    // Windows can't run a .js file as a program; the real Codex is codex.cmd / codex.exe, so wrap it the same way.
+    let fake = path.join(__dirname, 'fixtures', 'fake-codex.js');
+    if (process.platform === 'win32') {
+      const wrapper = path.join(home, 'fake-codex.cmd');
+      fs.writeFileSync(wrapper, `@"${process.execPath}" "${fake}" %*\r\n`);
+      fake = wrapper;
+    }
+    const codex = new CodexController({ getAdded: () => [], customPath: () => fake });
     const events = [];
     const finished = new Promise((resolve) => { codex.onEvent = (e) => { events.push(e); resolve(); }; });
     assert.match(codex.start(null, 'Make the README friendlier'), /Codex is on it \(Bluey\)/);

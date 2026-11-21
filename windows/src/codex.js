@@ -104,8 +104,10 @@ class CodexController {
     if (this.ready && this.proc) return this.ready;
     const bin = this.binary();
     if (!bin) throw new Error("Codex isn't installed on this PC. Install it with: npm install -g @openai/codex, then sign in with: codex login");
-    this.proc = spawn(bin, ['app-server'], {
-      cwd: os.homedir(), windowsHide: true, stdio: ['pipe', 'pipe', 'ignore'], shell: /\.cmd$/i.test(bin),
+    // A .cmd (npm's codex.cmd) runs through the shell; quote it so a path with spaces still works.
+    const viaShell = /\.cmd$/i.test(bin);
+    this.proc = spawn(viaShell ? `"${bin}"` : bin, ['app-server'], {
+      cwd: os.homedir(), windowsHide: true, stdio: ['pipe', 'pipe', 'ignore'], shell: viaShell,
     });
     this.buffer = ''; this.loaded = new Set();
     this.proc.stdout.setEncoding('utf8');
